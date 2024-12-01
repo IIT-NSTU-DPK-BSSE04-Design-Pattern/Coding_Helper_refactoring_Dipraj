@@ -14,6 +14,22 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 
+package searching;
+
+import IO.ProjectReader;
+import IO.Filereader;
+import console.Command;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+
 public class Search {
     public static ArrayList<String> ProjectFileName = new ArrayList<>();
     public static void ProjectRead(String Projectpath, String processfilePath) throws IOException {
