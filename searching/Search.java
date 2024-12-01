@@ -14,7 +14,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 
-package searching;
+
 
 import IO.ProjectReader;
 import IO.Filereader;
