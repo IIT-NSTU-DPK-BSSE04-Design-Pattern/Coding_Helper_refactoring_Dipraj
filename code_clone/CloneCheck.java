@@ -12,117 +12,88 @@ import java.util.HashMap;
 
 public class CloneCheck {
 
-    static ArrayList<String> ProjectFileName1 = new ArrayList<>();
-    static ArrayList<String> ProjectFileName2 = new ArrayList<>();
-    public static String path1;
-    public static String path2;
+    private ArrayList<String> projectFileName1 = new ArrayList<>();
+    private ArrayList<String> projectFileName2 = new ArrayList<>();
+    private String path1;
+    private String path2;
 
-    public String pathGenerate(String projectName) {
+    // Utility method to generate project path
+    private String pathGenerate(String projectName) {
         String currentpath = Command.currentPath;
         currentpath = new Command().pathGenerate(currentpath);
-        String current = currentpath.replaceAll("\\\\", "-").replace(":", "");//location of current file
-        String Pathname = "H:\\2-1\\project\\ProcessAllFiles" + "\\ProcessFile$" + current + "-" + projectName;
-
-        return Pathname;
+        String current = currentpath.replaceAll("\\\\", "-").replace(":", "");
+        return "H:\\2-1\\project\\ProcessAllFiles\\ProcessFile$" + current + "-" + projectName;
     }
 
-    public void getFileListforProject1(String projectOne) throws IOException {
-        String Pathname1 = pathGenerate(projectOne);
-        ProjectReader.getFileList(projectOne, Pathname1, ProjectFileName1);
-
+    // Method to list files for a project
+    private void getFileListForProject(String projectName, String projectPath, ArrayList<String> projectFileNames) throws IOException {
+        ProjectReader.getFileList(projectName, projectPath, projectFileNames);
     }
 
-    public void getFileListforProject2(String projectTwo) throws IOException {
-        String Pathname2 = pathGenerate(projectTwo);
-        ProjectReader.getFileList(projectTwo, Pathname2, ProjectFileName2);
-
-    }
-
-    /*   public void getFileList1(String project1) {
-
-        String currentpath = Command.currentPath;
-        String current = currentpath.replaceAll("\\\\", "-").replace(":", "");//location of current file
-        String Pathname1 = "H:\\coding_helper" + "\\ProcessFile$" + current + "-" + project1;
-        File folder = new File(Pathname1);
-        File[] listOfFiles = folder.listFiles();
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].toString().endsWith(".txt")) {
-                //  String newFilename = listOfFiles[i].getName().replaceAll(".{3}$", "java");
-                ProjectFileName1.add(listOfFiles[i].getName().replaceAll(".{3}$", "java"));
-            }
+    // Helper method to ensure directory creation
+    private void createDirectoryIfNotExist(String path) throws IOException {
+        Path p = Paths.get(path);
+        if (!Files.exists(p)) {
+            Files.createDirectories(p);
         }
-
     }
 
-    public void getFileList2(String project2) {
-
-        String currentpath = Command.currentPath;
-        String current = currentpath.replaceAll("\\\\", "-").replace(":", "");//location of current file
-        String Pathname2 = "H:\\coding_helper" + "\\ProcessFile$" + current + "-" + project2;
-        File folder = new File(Pathname2);
-        File[] listOfFiles = folder.listFiles();
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].toString().endsWith(".txt")) {
-                //  String newFilename = listOfFiles[i].getName().replaceAll(".{3}$", "java");
-                ProjectFileName2.add(listOfFiles[i].getName().replaceAll(".{3}$", "java"));
-            }
+    // Process files for a project and generate the necessary directories and files
+    private void processProjectFiles(String projectName, String path, HashMap<String, String> projectData) throws IOException {
+        createDirectoryIfNotExist(path);
+        for (HashMap.Entry<String, String> entry : projectData.entrySet()) {
+            new PreProcessing().ProcessFile(entry.getKey(), entry.getValue(), path);
         }
-
     }
-     */
-    public void Code_clone(String project1, String project2) throws IOException {
-        String Pathname1 = pathGenerate(project1);  //H:\2-1\project\ProcessAllFiles\ProcessFile$H-new
-        String Pathname2 = pathGenerate(project2);
 
-        File f1 = new File(Pathname1);
-        File f2 = new File(Pathname2);
-        if (!f1.exists()) {
-            ProjectReader.fileRead(Command.currentPath + "//" + project1, 0);
-          
-            Path p1 = Paths.get(Pathname1);
-            Files.createDirectories(p1);
+    // Main method to handle code cloning logic
+    public void codeClone(String project1, String project2) throws IOException {
+        String path1 = pathGenerate(project1);
+        String path2 = pathGenerate(project2);
 
-            for (HashMap.Entry<String, String> entry : ProjectReader.projectOne.entrySet()) {
-                new PreProcessing().ProcessFile(entry.getKey(), entry.getValue(), Pathname1); //entry.getKey()-filename with package
-            }
+        // Ensure project directories exist and process files
+        processProjectIfNeeded(project1, path1, ProjectReader.projectOne);
+        processProjectIfNeeded(project2, path2, ProjectReader.projectTwo);
+
+        // File list processing
+        getFileListForProject(project1, path1, projectFileName1);
+        getFileListForProject(project2, path2, projectFileName2);
+
+        // Initialize and perform calculations
+        TfIdfCalculate tfIdfCalculator = new TfIdfCalculate();
+        tfIdfCalculator.getUniqueWordProject1(path1);
+        tfIdfCalculator.getUniqueWordProject2(path2);
+        tfIdfCalculator.IdfCal();
+        tfIdfCalculator.tfIdfVectorProject1();
+        tfIdfCalculator.tfIdfVectorProject2();
+
+        CosineSimilarity cosineSimilarity = new CosineSimilarity();
+        cosineSimilarity.getCosinesimilarity();
+
+        // Display the results using Box and Whisker chart
+        new BoxAndWhiskerChart()
+
+        // Clean up static data to prevent memory leaks
+        cleanUpStaticData();
+    }
+
+    // Process project if directory doesn't exist
+    private void processProjectIfNeeded(String projectName, String projectPath, HashMap<String, String> projectData) throws IOException {
+        File projectFolder = new File(projectPath);
+        if (!projectFolder.exists()) {
+            ProjectReader.fileRead(Command.currentPath + "//" + projectName, projectData.equals(ProjectReader.projectOne) ? 0 : 1);
+            processProjectFiles(projectName, projectPath, projectData);
         }
-        getFileListforProject1(project1);
-        path1 = Pathname1;
-        if (!f2.exists()) {
-            ProjectReader.fileRead(Command.currentPath + "//" + project2, 1);
-            //  System.out.println("p2=" + Command.currentPath);
-            Path p2 = Paths.get(Pathname2);
-            Files.createDirectories(p2);
+    }
 
-            for (HashMap.Entry<String, String> entry : ProjectReader.projectTwo.entrySet()) {
-                //System.out.println(entry.getKey() + "   " + entry.getValue());
-                new PreProcessing().ProcessFile(entry.getKey(), entry.getValue(), Pathname2);
-            }
-
-        }
-        getFileListforProject2(project2);
-        path2 = Pathname2;
-        TfIdfCalculate ob = new TfIdfCalculate();
-        ob.getUniqueWordProject1(path1);
-        ob.getUniqueWordProject2(path2);
-        ob.IdfCal();
-        ob.tfIdfVectorProject1();
-        ob.tfIdfVectorProject2();
-        CosineSimilarity sim = new CosineSimilarity();
-        sim.getCosinesimilarity();
-       // sim.getAverage();
-        // BoxAndWhiskerChart.BoxWhisker();
-        new BoxAndWhiskerChart().display();
+    // Cleanup static data (ensure clearing only when necessary)
+    private void cleanUpStaticData() {
         CosineSimilarity.similarArray.clear();
-        //  BoxAndWhiskerChart.list.clear();
         ProjectReader.projectOne.clear();
         ProjectReader.projectTwo.clear();
-
         TfIdfCalculate.tfidfvectorProject1.clear();
-
         TfIdfCalculate.tfidfvectorProject2.clear();
-        ProjectFileName1.clear();
-        ProjectFileName2.clear();
-
+        projectFileName1.clear();
+        projectFileName2.clear();
     }
 }
