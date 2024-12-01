@@ -12,7 +12,7 @@ public class mainDecode {
 
     public void Decompress(String path) throws IOException {
         Decompress de;
-        String p = new Command().pathGenerate(path);
+        String p = new Command().pathG(path);
         String compressFile = compressFile(p);
         String decompressFile = decompressFile(p);
 
@@ -24,8 +24,7 @@ public class mainDecode {
 
     public String compressFile(String path) throws IOException {
 
-        Scanner sc = new Scanner(System.in);
-        System.out.print("\tEnter a compressed filename:");
+        Scanner sc = new Scanner(System.in); // Not closed properly
 
 
         String filename = sc.nextLine().trim();
@@ -63,9 +62,8 @@ public class mainDecode {
 
     public String decompressFile(String path) throws IOException {
 
-        Scanner sc = new Scanner(System.in);
-        System.out.print("\tEnter Decompress file name: ");
-        // exit();
+        Scanner sc = new Scanner(System.in); // Not closed properly
+
         String decompressFileName = sc.nextLine().trim();
 
         if (!(decompressFileName.endsWith(".txt") | decompressFileName.endsWith(".java")) | decompressFileName.isEmpty()) {
