@@ -7,57 +7,61 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MethodFind {
+    private final GrepContent grepContent;
+    private final ProcessSearchFile processSearchFile;
 
-    //  public static ArrayList<String> Methodbody = new ArrayList<>();
-    public void getMethod(String filename, String fileContent, String path, String processfilePath) throws FileNotFoundException, IOException {
+    public MethodFind() {
+        this.grepContent = new GrepContent();
+        this.processSearchFile = new ProcessSearchFile();
+    }
 
+    public void getMethod(String filename, String fileContent, String path, String processfilePath) 
+            throws FileNotFoundException, IOException {
+        String file = extractFileContent(fileContent);
+        Pattern methodPattern = createMethodPattern();
+        processMatches(methodPattern, file, filename, path, processfilePath);
+    }
+
+    private String extractFileContent(String fileContent) {
         Scanner scan = new Scanner(fileContent);
-        int linenumber = 0;
-        String file = scan.useDelimiter("\\Z").next().trim();             //^\w+\W\w+\.(\w+){3}\s*\{?+[^;]$ dotall
-        String pattern = "(public|void|protected|private|static|final|public static|private static|protected static|public final|private final|protective final)+\\s*(\\<.*\\>)*\\s*[a-zA-Z]*\\s*\\b([_$a-zA-Z1-9]+)\\b\\s*\\(.*\\)\\s*[^;].*?$";
-        //  String pattern ="^(public)\\s+[a-zA-Z]*\\s+(\\bmethodName\\b)\\s*\\(\\)[^;]*$";
-        Matcher methodMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(file);
-        while (methodMatcher.find()) {
-            //   Search.count++;
-            String method = new GrepContent().findBetweenBraces(methodMatcher.start(), file);
-            String methodname = methodMatcher.group().replaceAll("\\{", "").replaceAll("[\r\n]+", " ").trim();
-            //   System.out.println("matcher=" + methodname);
-            linenumber = new GrepContent().getLineNumber(methodname, path, linenumber);
-            String processFilename = methodMatcher.group(3) + "-" + linenumber + "-" + filename;;
+        return scan.useDelimiter("\\Z").next().trim();
+    }
 
-            if (linenumber != 0) {
-                new ProcessSearchFile().processMethod(processFilename, method, path, processfilePath);
+    private Pattern createMethodPattern() {
+        return Pattern.compile(
+            "(public|void|protected|private|static|final|public static|private static|protected static|" +
+            "public final|private final|protective final)+\\s*(\\<.*\\>)*\\s*[a-zA-Z]*\\s*\\b([_$a-zA-Z1-9]+)\\b\\s*" +
+            "\\(.*\\)\\s*[^;].*?$",
+            Pattern.MULTILINE
+        );
+    }
 
-                //   System.out.println("group="+methodMatcher.group());
-            }
+    private void processMatches(Pattern pattern, String content, String filename, 
+                              String path, String processfilePath) throws IOException {
+        Matcher matcher = pattern.matcher(content);
+        while (matcher.find()) {
+            processMatch(matcher, content, filename, path, processfilePath);
         }
     }
 
-    public void getConstructor(String filename, String fileContent, String path, String processfilePath) throws FileNotFoundException, IOException {
-        int linenumber = 0;
-        Pattern classpattern = Pattern.compile("class\\s+([a-zA-Z]+).*");
-        Matcher classMatcher = classpattern.matcher(fileContent);
-        while (classMatcher.find()) {
-            String className = classMatcher.group(1);
-            //  System.out.println("DF="+className);
-            String classContent = new GrepContent().findBetweenBraces(classMatcher.start(), fileContent);
-            Pattern constructorFind = Pattern.compile("(\\b" + classMatcher.group(1) + "\\b)\\s*\\(.*\\)\\s*[^;].*$", Pattern.MULTILINE);
-
-            Matcher consMatch = constructorFind.matcher(classContent);
-            while (consMatch.find()) {
-                String cons = consMatch.group();
-                //  Search.count++;
-                //   System.out.println("constructor=" + cons);
-                String constructor = new GrepContent().findBetweenBraces(consMatch.start(), classContent);
-                String ConsName = consMatch.group().replaceAll("\\{", "").replaceAll("[\r\n]+", " ").trim();
-                linenumber = new GrepContent().getLineNumber(ConsName, path, linenumber);
-                String processFilename = consMatch.group(1) + "-" + linenumber + "-" + filename;
-                //    System.out.println("pro==" + processFilename);
-                if (linenumber != 0) {
-                    new ProcessSearchFile().processMethod(processFilename, constructor, path, processfilePath);
-                }
-
-            }
+    private void processMatch(Matcher matcher, String content, String filename, 
+                            String path, String processfilePath) throws IOException {
+        String method = grepContent.findBetweenBraces(matcher.start(), content);
+        String methodName = cleanMethodName(matcher.group());
+        int lineNumber = grepContent.getLineNumber(methodName, path, 0);
+        
+        if (lineNumber != 0) {
+            String processFilename = createProcessFilename(matcher.group(3), lineNumber, filename);
+            processSearchFile.processMethod(processFilename, method, path, processfilePath);
         }
+    }
+
+    private String cleanMethodName(String methodName) {
+        return methodName.replaceAll("\\{", "").replaceAll("[\r\n]+", " ").trim();
+    }
+
+    private String createProcessFilename(String name, int lineNumber, String filename) {
+        return String.format("%s-%d-%s", name, lineNumber, filename);
     }
 }
+
